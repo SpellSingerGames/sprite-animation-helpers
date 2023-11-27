@@ -528,7 +528,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             AnimationUtility.SetEditorCurves(animClip, curveBindings, curves);
         }
 
-        [MenuItem("Tools/Animation Clips Creator")]
+        [MenuItem("Window/SpellSinger/Animation Clips Creator")]
         private static void ShowWindow()
         {
             var window = GetWindow<AnimationClipsCreator>();

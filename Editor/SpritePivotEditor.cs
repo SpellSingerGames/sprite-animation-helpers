@@ -62,7 +62,7 @@ namespace SpellSinger.SpriteAnimationHelpers
         }
 
 
-        [MenuItem("Tools/Sprite Pivot Editor")]
+        [MenuItem("Window/SpellSinger/Sprite Pivot Editor")]
         private static void ShowWindow()
         {
             var window = GetWindow<SpritePivotEditor>();

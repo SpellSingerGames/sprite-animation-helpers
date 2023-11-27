@@ -286,7 +286,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             ti.SaveAndReimport();
         }
 
-        [MenuItem("Tools/Sprite Animation Importer")]
+        [MenuItem("Window/SpellSinger/Sprite Animation Importer")]
         private static void ShowWindow()
         {
             var window = GetWindow<SpriteAnimationImporter>();
