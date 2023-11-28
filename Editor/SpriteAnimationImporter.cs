@@ -28,7 +28,7 @@ namespace SpellSinger.SpriteAnimationHelpers
         [SerializeField] private int padding = 2;
         [SerializeField] private bool square;
 
-        [SerializeField] private int pixelsPerUnit = 256;
+        [SerializeField] private int pixelsPerUnit = 100;
 
         [SerializeField] private SpriteAlignment alignment = SpriteAlignment.Center;
         [SerializeField] private Vector2 pivot = new(0.5f, 0.5f);
