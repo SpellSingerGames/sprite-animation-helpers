@@ -35,7 +35,17 @@ namespace SpellSinger.SpriteAnimationHelpers
 
         private void OnGUI()
         {
+            EditorGUILayout.BeginHorizontal();
             sourcePath = EditorGUILayout.TextField("Source Directory", sourcePath);
+            var pickButtonWidth = GUILayout.Width(50);
+            if (GUILayout.Button("Open", pickButtonWidth))
+            {
+                var picked = EditorUtility.OpenFolderPanel("Source Directory", sourcePath, "");
+                if (!string.IsNullOrWhiteSpace(picked))
+                    sourcePath = picked;
+            }
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.BeginHorizontal();
             withPrefix = EditorGUILayout.Toggle("With Prefix", withPrefix);
             if (withPrefix)
