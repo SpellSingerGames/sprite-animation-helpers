@@ -14,6 +14,10 @@ namespace SpellSinger.SpriteAnimationHelpers
 {
     public class SpriteAnimationImporter : EditorWindow
     {
+        [SerializeField] private bool useTexture;
+        [SerializeField] private bool addToSameTexture;
+        [SerializeField] private Texture2D sourceTexture;
+        [SerializeField] private int skipLastFromTexture;
         [SerializeField] private string sourcePath;
         [SerializeField] private bool withPrefix;
         [SerializeField] private bool isButton;
@@ -35,6 +39,15 @@ namespace SpellSinger.SpriteAnimationHelpers
 
         private void OnGUI()
         {
+            useTexture = EditorGUILayout.Toggle("Take Sprites from Texture", useTexture);
+            if (useTexture)
+            {
+                addToSameTexture = EditorGUILayout.Toggle("Add to Same Texture", addToSameTexture);
+                skipLastFromTexture = EditorGUILayout.IntField("Skip Last N from Texture", skipLastFromTexture);
+                sourceTexture =
+                    (Texture2D)EditorGUILayout.ObjectField("Source Texture", sourceTexture, typeof(Texture2D), false);
+            }
+
             EditorGUILayout.BeginHorizontal();
             sourcePath = EditorGUILayout.TextField("Source Directory", sourcePath);
             var pickButtonWidth = GUILayout.Width(50);
@@ -44,28 +57,49 @@ namespace SpellSinger.SpriteAnimationHelpers
                 if (!string.IsNullOrWhiteSpace(picked))
                     sourcePath = picked;
             }
+
             EditorGUILayout.EndHorizontal();
+
 
             EditorGUILayout.BeginHorizontal();
             withPrefix = EditorGUILayout.Toggle("With Prefix", withPrefix);
             if (withPrefix)
             {
                 prefix = EditorGUILayout.TextField(prefix);
-                usePrefixAsName = EditorGUILayout.Toggle("Use Prefix As Name", usePrefixAsName);
+                if (!addToSameTexture)
+                    usePrefixAsName = EditorGUILayout.Toggle("Use Prefix As Name", usePrefixAsName);
             }
-            else
-            {
-                usePrefixAsName = false;
-            }
+
             EditorGUILayout.EndHorizontal();
 
             isButton = EditorGUILayout.Toggle("Button", isButton);
 
-            outputFolder =
-                (DefaultAsset)EditorGUILayout.ObjectField("Output Folder", outputFolder, typeof(DefaultAsset), false);
+            if (useTexture && addToSameTexture)
+            {
+                if (sourceTexture != null)
+                {
+                    var texturePath = AssetDatabase.GetAssetPath(sourceTexture);
+                    var folderPath = texturePath.Substring(0, texturePath.LastIndexOf('/'));
+                    outputFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(folderPath);
+                }
+                else
+                    outputFolder = null;
+            }
+            else
+            {
+                outputFolder =
+                    (DefaultAsset)EditorGUILayout.ObjectField("Output Folder", outputFolder,
+                        typeof(DefaultAsset), false);
+            }
 
-            if (usePrefixAsName)
+            if (addToSameTexture)
+            {
+                outputName = sourceTexture != null ? sourceTexture.name : null;
+            }
+            else if (withPrefix && usePrefixAsName)
+            {
                 outputName = prefix;
+            }
             else
             {
                 EditorGUILayout.BeginHorizontal();
@@ -79,9 +113,8 @@ namespace SpellSinger.SpriteAnimationHelpers
                     }
                 }
                 else
-                {
                     outputName = GetSourceFolderName();
-                }
+
                 EditorGUILayout.EndHorizontal();
             }
 
@@ -105,13 +138,22 @@ namespace SpellSinger.SpriteAnimationHelpers
             if (outputFolder != null && outputName != "" && GUILayout.Button("Import", buttonStyle))
             {
                 AssetDatabase.Refresh();
-                var info = new DirectoryInfo(sourcePath);
-                var images = info.GetFiles()
-                    .Where(file => file.Extension.Equals(".png") && (!withPrefix || file.Name.StartsWith(prefix)))
-                    .Select(file => (file, Name: isButton ? RenameForButton(file.Name) : file.Name))
-                    .OrderBy(tuple => tuple.Name)
-                    .Select(tuple => (Image: Image.FromFile(tuple.file.FullName), tuple.Name))
-                    .ToList();
+                var images = new List<(Image Image, string Name)>();
+
+                if (sourceTexture != null)
+                    images.AddRange(ReadTextureSprites());
+
+
+                if (!string.IsNullOrWhiteSpace(sourcePath))
+                {
+                    images.AddRange(ReadFiles());
+                }
+
+                if (images.Count == 0)
+                {
+                    Debug.LogWarning("No images found");
+                    return;
+                }
 
                 try
                 {
@@ -132,7 +174,7 @@ namespace SpellSinger.SpriteAnimationHelpers
                     Join(texPath, width, cols, height, rows, images, outputWidth, outputHeight);
 
 
-                    Divide(texPath, width, height, rows, cols, images, outputWidth, outputHeight);
+                    Divide(texPath, width, height, rows, cols, images, outputHeight);
                 }
                 finally
                 {
@@ -142,6 +184,47 @@ namespace SpellSinger.SpriteAnimationHelpers
                     }
                 }
             }
+        }
+
+        private List<(Image Image, string Name)> ReadTextureSprites()
+        {
+            var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sourceTexture)) as TextureImporter;
+            if (importer == null)
+                throw new NullReferenceException("Importer is null");
+
+            try
+            {
+                importer.isReadable = true;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+                var factory = new SpriteDataProviderFactories();
+                factory.Init();
+                var dataProvider = factory.GetSpriteEditorDataProviderFromObject(sourceTexture);
+                dataProvider.InitSpriteEditorDataProvider();
+
+                var spriteRects = dataProvider.GetSpriteRects().ToList();
+
+                return spriteRects
+                    .Select(spriteRect => (ExtractSpriteAsImage(sourceTexture, spriteRect.rect), spriteRect.name))
+                    .SkipLast(skipLastFromTexture)
+                    .ToList();
+            }
+            finally
+            {
+                importer.isReadable = false;
+                importer.SaveAndReimport();
+            }
+        }
+
+        private List<(Image Image, string Name)> ReadFiles()
+        {
+            var info = new DirectoryInfo(sourcePath);
+            return info.GetFiles()
+                .Where(file => file.Extension.Equals(".png") && (!withPrefix || file.Name.StartsWith(prefix)))
+                .Select(file => (file, Name: isButton ? RenameForButton(file.Name) : file.Name))
+                .OrderBy(tuple => tuple.Name)
+                .Select(tuple => (Image: Image.FromFile(tuple.file.FullName), tuple.Name))
+                .ToList();
         }
 
         private void Join(string texPath, int width, int cols, int height, int rows,
@@ -175,39 +258,8 @@ namespace SpellSinger.SpriteAnimationHelpers
             combined.Save(texPath, ImageFormat.Png);
         }
 
-        private string GetSourceFolderName()
-        {
-            if (sourcePath == null)
-                return "";
-
-            return sourcePath[(sourcePath.Replace("\\", "/").LastIndexOf("/", StringComparison.Ordinal) + 1)..];
-        }
-
-        private static int MultipleOf4(int value)
-        {
-            if (value % 4 == 0)
-            {
-                return value;
-            }
-
-            return value + 4 - value % 4;
-        }
-
-        private static string RenameForButton(string name)
-        {
-            if (name.Contains("normal"))
-                return "01_normal";
-            if (name.Contains("highlighted") || name.Contains("hover"))
-                return "02_highlighted";
-            if (name.Contains("pressed") || name.Contains("clicked"))
-                return "03_pressed";
-            if (name.Contains("disabled"))
-                return "04_disabled";
-            return name;
-        }
-
         private void Divide(string texPath, int width, int height, int rows, int cols,
-            List<(Image Image, string Name)> images, int outputWidth, int outputHeight)
+            List<(Image Image, string Name)> images, int outputHeight)
         {
             var ti = AssetImporter.GetAtPath(texPath) as TextureImporter;
             if (ti == null)
@@ -294,6 +346,67 @@ namespace SpellSinger.SpriteAnimationHelpers
 
             ti.isReadable = false;
             ti.SaveAndReimport();
+        }
+
+        private static Image ExtractSpriteAsImage(Texture2D texture, Rect rect)
+        {
+            // Extract pixel data directly from the original texture
+            var pixels = texture.GetPixels(
+                (int)rect.x,
+                (int)rect.y,
+                (int)rect.width,
+                (int)rect.height);
+
+            // Create a bitmap and fill its pixels
+            var bitmap = new Bitmap((int)rect.width, (int)rect.height, PixelFormat.Format32bppArgb);
+
+            for (var y = 0; y < rect.height; y++)
+            {
+                for (var x = 0; x < rect.width; x++)
+                {
+                    var pixel = pixels[y * (int)rect.width + x];
+                    var color = System.Drawing.Color.FromArgb(
+                        (int)(pixel.a * 255),
+                        (int)(pixel.r * 255),
+                        (int)(pixel.g * 255),
+                        (int)(pixel.b * 255)
+                    );
+                    bitmap.SetPixel(x, (int)rect.height - 1 - y, color); // Flip Y for correct orientation
+                }
+            }
+
+            return bitmap;
+        }
+
+        private string GetSourceFolderName()
+        {
+            if (sourcePath == null)
+                return "";
+
+            return sourcePath[(sourcePath.Replace("\\", "/").LastIndexOf("/", StringComparison.Ordinal) + 1)..];
+        }
+
+        private static int MultipleOf4(int value)
+        {
+            if (value % 4 == 0)
+            {
+                return value;
+            }
+
+            return value + 4 - value % 4;
+        }
+
+        private static string RenameForButton(string name)
+        {
+            if (name.Contains("normal"))
+                return "01_normal";
+            if (name.Contains("highlighted") || name.Contains("hover"))
+                return "02_highlighted";
+            if (name.Contains("pressed") || name.Contains("clicked"))
+                return "03_pressed";
+            if (name.Contains("disabled"))
+                return "04_disabled";
+            return name;
         }
 
         [MenuItem("Window/SpellSinger/Sprite Animation Importer")]
