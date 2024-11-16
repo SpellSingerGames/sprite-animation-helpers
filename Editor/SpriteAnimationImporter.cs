@@ -192,6 +192,9 @@ namespace SpellSinger.SpriteAnimationHelpers
             if (importer == null)
                 throw new NullReferenceException("Importer is null");
 
+            var readable = importer.isReadable;
+            var compression = importer.textureCompression;
+
             try
             {
                 importer.isReadable = true;
@@ -211,7 +214,8 @@ namespace SpellSinger.SpriteAnimationHelpers
             }
             finally
             {
-                importer.isReadable = false;
+                importer.isReadable = readable;
+                importer.textureCompression = compression;
                 importer.SaveAndReimport();
             }
         }
