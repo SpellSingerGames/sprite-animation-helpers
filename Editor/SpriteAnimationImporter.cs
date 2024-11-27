@@ -140,7 +140,7 @@ namespace SpellSinger.SpriteAnimationHelpers
                 AssetDatabase.Refresh();
                 var images = new List<(Image Image, string Name)>();
 
-                if (sourceTexture != null)
+                if (useTexture && sourceTexture != null)
                     images.AddRange(ReadTextureSprites());
 
 
