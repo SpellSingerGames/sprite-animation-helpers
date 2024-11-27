@@ -66,7 +66,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             if (withPrefix)
             {
                 prefix = EditorGUILayout.TextField(prefix);
-                if (!addToSameTexture)
+                if (!(useTexture && addToSameTexture))
                     usePrefixAsName = EditorGUILayout.Toggle("Use Prefix As Name", usePrefixAsName);
             }
 
@@ -92,7 +92,7 @@ namespace SpellSinger.SpriteAnimationHelpers
                         typeof(DefaultAsset), false);
             }
 
-            if (addToSameTexture)
+            if (useTexture && addToSameTexture)
             {
                 outputName = sourceTexture != null ? sourceTexture.name : null;
             }
