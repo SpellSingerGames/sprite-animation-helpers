@@ -225,7 +225,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             var info = new DirectoryInfo(sourcePath);
             return info.GetFiles()
                 .Where(file => file.Extension.Equals(".png") && (!withPrefix || file.Name.StartsWith(prefix)))
-                .Select(file => (file, Name: isButton ? RenameForButton(file.Name) : file.Name))
+                .Select((file, i) => (file, Name: isButton ? RenameForButton(file, i) : file.Name))
                 .OrderBy(tuple => tuple.Name)
                 .Select(tuple => (Image: Image.FromFile(tuple.file.FullName), tuple.Name))
                 .ToList();
@@ -400,8 +400,9 @@ namespace SpellSinger.SpriteAnimationHelpers
             return value + 4 - value % 4;
         }
 
-        private static string RenameForButton(string name)
+        private static string RenameForButton(FileInfo fileInfo, int i)
         {
+            var name = fileInfo.Name;
             if (name.Contains("normal"))
                 return "01_normal";
             if (name.Contains("highlighted") || name.Contains("hover"))
@@ -410,7 +411,8 @@ namespace SpellSinger.SpriteAnimationHelpers
                 return "03_pressed";
             if (name.Contains("disabled"))
                 return "04_disabled";
-            return name;
+            Debug.LogWarning($"Cannot recognize button sprite name: {fileInfo.FullName}");
+            return i.ToString();
         }
 
         [MenuItem("Window/SpellSinger/Sprite Animation Importer")]
