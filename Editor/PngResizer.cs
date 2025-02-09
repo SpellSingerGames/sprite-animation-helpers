@@ -130,7 +130,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             }
 
             output.Apply();
-            File.WriteAllBytes(path + ".png", output.EncodeToPNG());
+            File.WriteAllBytes(path, output.EncodeToPNG());
         }
     }
 }
