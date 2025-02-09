@@ -30,7 +30,8 @@ namespace SpellSinger.SpriteAnimationHelpers
 
         [SerializeField] private int maxCols = 8;
         [SerializeField] private int padding = 2;
-        [SerializeField] private bool square;
+        [SerializeField] private bool squareTexture;
+        [SerializeField] private bool squareSprites;
 
         [SerializeField] private int pixelsPerUnit = 100;
 
@@ -121,7 +122,8 @@ namespace SpellSinger.SpriteAnimationHelpers
 
             maxCols = EditorGUILayout.IntField("Max Columns", maxCols);
             padding = EditorGUILayout.IntField("Padding", padding);
-            square = EditorGUILayout.Toggle("Square Texture", square);
+            squareTexture = EditorGUILayout.Toggle("Square Texture", squareTexture);
+            squareSprites = EditorGUILayout.Toggle("Square Sprites", squareSprites);
 
             pixelsPerUnit = EditorGUILayout.IntField("Pixels Per Unit", pixelsPerUnit);
             alignment = (SpriteAlignment)EditorGUILayout.EnumPopup("Sprite Alignment", alignment);
@@ -159,6 +161,8 @@ namespace SpellSinger.SpriteAnimationHelpers
                 {
                     var width = MultipleOf4(images.Select(tuple => tuple.Image.Width).Max());
                     var height = MultipleOf4(images.Select(tuple => tuple.Image.Height).Max());
+                    if (squareSprites)
+                        width = height = Math.Max(width, height);
 
                     var rows = Mathf.CeilToInt(images.Count / (float)maxCols);
                     var cols = Math.Min(maxCols, images.Count);
@@ -168,7 +172,7 @@ namespace SpellSinger.SpriteAnimationHelpers
 
                     var outputWidth = MultipleOf4((width + padding) * cols);
                     var outputHeight = MultipleOf4((height + padding) * rows);
-                    if (square)
+                    if (squareTexture)
                         outputWidth = outputHeight = Math.Max(outputWidth, outputHeight);
 
                     Join(texPath, width, cols, height, rows, images, outputWidth, outputHeight);
