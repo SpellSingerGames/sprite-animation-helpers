@@ -1,6 +1,6 @@
 {
   "name": "com.spellsinger.sprites",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "displayName": "Sprite Animation Helpers",
   "description": "Unity Editor extensions: Sprite Animation Importer, Sprite Pivot Editor, Animations Clip Creator, Sprite Renamer, PNG Resizer",
   "unity": "2021.3",

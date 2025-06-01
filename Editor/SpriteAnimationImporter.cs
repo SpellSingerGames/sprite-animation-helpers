@@ -212,7 +212,8 @@ namespace SpellSinger.SpriteAnimationHelpers
                 var spriteRects = dataProvider.GetSpriteRects().ToList();
 
                 return spriteRects
-                    .Select(spriteRect => (ExtractSpriteAsImage(sourceTexture, spriteRect.rect), spriteRect.name))
+                    .Select(spriteRect => (ExtractSpriteAsImage(sourceTexture, spriteRect.rect),
+                        CutPrefix(sourceTexture, spriteRect)))
                     .SkipLast(skipLastFromTexture)
                     .ToList();
             }
@@ -384,6 +385,13 @@ namespace SpellSinger.SpriteAnimationHelpers
             }
 
             return bitmap;
+        }
+
+        private static string CutPrefix(Texture2D tex, SpriteRect spriteRect)
+        {
+            if (spriteRect.name.StartsWith(tex.name + "_"))
+                return spriteRect.name[(tex.name.Length + 1)..];
+            return spriteRect.name;
         }
 
         private string GetSourceFolderName()
