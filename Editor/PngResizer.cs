@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace SpellSinger.SpriteAnimationHelpers
 {
-    public class SpriteResizer : EditorWindow
+    public class SpriteResizer
     {
         [MenuItem("Assets/Find not resized PNGs", false)]
         private static void FindNotResized(MenuCommand menuCommand)
@@ -19,7 +19,50 @@ namespace SpellSinger.SpriteAnimationHelpers
         private static void Resize(MenuCommand menuCommand)
         {
             var textures = FindTexturesInSelection();
-            textures.ForEach(texture2D => Resize(texture2D, false));
+            textures.ForEach(texture2D => Resize(texture2D, false, 0, 0));
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Assets/Resize PNGs to multiple of 4/Fixed Bottom", false)]
+        private static void ResizeFixedBottom(MenuCommand menuCommand)
+        {
+            var textures = FindTexturesInSelection();
+            textures.ForEach(texture2D => Resize(texture2D, false, 0, -1));
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+
+        [MenuItem("Assets/Resize PNGs to multiple of 4/Fixed Top", false)]
+        private static void ResizeFixedTop(MenuCommand menuCommand)
+        {
+            var textures = FindTexturesInSelection();
+            textures.ForEach(texture2D => Resize(texture2D, false, 0, 1));
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+
+        [MenuItem("Assets/Resize PNGs to multiple of 4/Fixed Left", false)]
+        private static void ResizeFixedLeft(MenuCommand menuCommand)
+        {
+            var textures = FindTexturesInSelection();
+            textures.ForEach(texture2D => Resize(texture2D, false, -1, 0));
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+
+        [MenuItem("Assets/Resize PNGs to multiple of 4/Fixed Right", false)]
+        private static void ResizeFixedRight(MenuCommand menuCommand)
+        {
+            var textures = FindTexturesInSelection();
+            textures.ForEach(texture2D => Resize(texture2D, false, 1, 0));
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -29,7 +72,7 @@ namespace SpellSinger.SpriteAnimationHelpers
         private static void ResizeWithExpand(MenuCommand menuCommand)
         {
             var textures = FindTexturesInSelection();
-            textures.ForEach(texture2D => Resize(texture2D, true));
+            textures.ForEach(texture2D => Resize(texture2D, true, 0, 0));
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -58,7 +101,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             return textures;
         }
 
-        private static void Resize(Texture2D tex, bool fromCenter)
+        private static void Resize(Texture2D tex, bool fromCenter, int horizontalAlignment, int verticalAlignment)
         {
             var path = AssetDatabase.GetAssetPath(tex);
 
@@ -125,8 +168,22 @@ namespace SpellSinger.SpriteAnimationHelpers
             {
                 output.SetPixels32(0, 0, newWidth, newHeight,
                     Enumerable.Repeat(new Color32(0, 0, 0, 0), newHeight * newWidth).ToArray());
-                output.SetPixels32((newWidth - tex.width) / 2, newHeight - tex.height - (newHeight - tex.height) / 2,
-                    tex.width, tex.height, readableTex.GetPixels32());
+
+                var x = horizontalAlignment switch
+                {
+                    -1 => 0,
+                    1 => newWidth - tex.width,
+                    _ => (newWidth - tex.width) / 2
+                };
+
+                var y = verticalAlignment switch
+                {
+                    -1 => 0,
+                    1 => newHeight - tex.height,
+                    _ => (newHeight - tex.height) / 2
+                };
+
+                output.SetPixels32(x, y, tex.width, tex.height, readableTex.GetPixels32());
             }
 
             output.Apply();
