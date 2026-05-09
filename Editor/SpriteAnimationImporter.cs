@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
+using Color = System.Drawing.Color;
 using Graphics = System.Drawing.Graphics;
 
 namespace SpellSinger.SpriteAnimationHelpers
@@ -21,6 +22,7 @@ namespace SpellSinger.SpriteAnimationHelpers
         [SerializeField] private string sourcePath;
         [SerializeField] private bool withPrefix;
         [SerializeField] private bool isButton;
+        [SerializeField] private bool keepNames;
         [SerializeField] private bool usePrefixAsName;
         [SerializeField] private string prefix;
 
@@ -74,6 +76,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             EditorGUILayout.EndHorizontal();
 
             isButton = EditorGUILayout.Toggle("Button", isButton);
+            keepNames = !isButton && EditorGUILayout.Toggle("Keep Names", keepNames);
 
             if (useTexture && addToSameTexture)
             {
@@ -230,7 +233,7 @@ namespace SpellSinger.SpriteAnimationHelpers
             var info = new DirectoryInfo(sourcePath);
             return info.GetFiles()
                 .Where(file => file.Extension.Equals(".png") && (!withPrefix || file.Name.StartsWith(prefix)))
-                .Select((file, i) => (file, Name: isButton ? RenameForButton(file, i) : file.Name))
+                .Select((file, i) => (file, Name: GetSpriteName(file, i)))
                 .OrderBy(tuple => tuple.Name)
                 .Select(tuple => (Image: Image.FromFile(tuple.file.FullName), tuple.Name))
                 .ToList();
@@ -327,10 +330,18 @@ namespace SpellSinger.SpriteAnimationHelpers
                         goto DONE;
                     }
 
-                    var suffix = isButton ? images[i].Name : i.ToString();
+                    string name;
+                    if (keepNames)
+                        name = images[i].Name;
+                    else
+                    {
+                        var suffix = isButton ? images[i].Name : i.ToString();
+                        name = $"{tex.name}_{suffix}";
+                    }
+
                     var spriteRect = new SpriteRect
                     {
-                        name = $"{tex.name}_{suffix}",
+                        name = name,
                         spriteID = GUID.Generate(),
                         rect = new Rect(col * (width + padding),
                             outputHeight - row * (height + padding) - height,
@@ -374,7 +385,7 @@ namespace SpellSinger.SpriteAnimationHelpers
                 for (var x = 0; x < rect.width; x++)
                 {
                     var pixel = pixels[y * (int)rect.width + x];
-                    var color = System.Drawing.Color.FromArgb(
+                    var color = Color.FromArgb(
                         (int)(pixel.a * 255),
                         (int)(pixel.r * 255),
                         (int)(pixel.g * 255),
@@ -387,10 +398,14 @@ namespace SpellSinger.SpriteAnimationHelpers
             return bitmap;
         }
 
-        private static string CutPrefix(Texture2D tex, SpriteRect spriteRect)
+        private string CutPrefix(Texture2D tex, SpriteRect spriteRect)
         {
+            if (keepNames)
+                return spriteRect.name;
+
             if (spriteRect.name.StartsWith(tex.name + "_"))
                 return spriteRect.name[(tex.name.Length + 1)..];
+
             return spriteRect.name;
         }
 
@@ -412,6 +427,14 @@ namespace SpellSinger.SpriteAnimationHelpers
             return value + 4 - value % 4;
         }
 
+        private string GetSpriteName(FileInfo file, int i)
+        {
+            if (isButton)
+                return RenameForButton(file, i);
+
+            return RemovePngExtension(file);
+        }
+
         private static string RenameForButton(FileInfo fileInfo, int i)
         {
             var name = fileInfo.Name;
@@ -425,6 +448,14 @@ namespace SpellSinger.SpriteAnimationHelpers
                 return "04_disabled";
             Debug.LogWarning($"Cannot recognize button sprite name: {fileInfo.FullName}");
             return i.ToString();
+        }
+
+        private static string RemovePngExtension(FileInfo fileInfo)
+        {
+            var name = fileInfo.Name;
+            if (name.EndsWith(".png"))
+                return name[..^".png".Length];
+            return name;
         }
 
         [MenuItem("Window/SpellSinger/Sprite Animation Importer")]
