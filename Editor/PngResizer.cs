@@ -12,7 +12,7 @@ namespace SpellSinger.SpriteAnimationHelpers
         private static void FindNotResized(MenuCommand menuCommand)
         {
             var textures = FindTexturesInSelection();
-            textures.ForEach(tex => { Debug.LogWarning($"Texture {tex} has incorrect size ({tex.width}x{tex.height})!", tex); });
+            textures.ForEach(tex => { Debug.Log($"Texture {tex} has incorrect size ({tex.width}x{tex.height})!", tex); });
         }
 
         [MenuItem("Assets/Resize PNGs to multiple of 4/Default", false)]
