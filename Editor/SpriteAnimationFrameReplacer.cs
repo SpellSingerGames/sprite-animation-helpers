@@ -14,6 +14,11 @@ namespace SpellSinger.SpriteAnimationHelpers
         private string folder;
         private string file;
 
+        private void OnEnable()
+        {
+            titleContent = new GUIContent("Sprite Animation Frame Replacer");
+        }
+
         private void OnGUI()
         {
             texture = (Texture2D)EditorGUILayout.ObjectField("Texture", texture, typeof(Texture2D), false);

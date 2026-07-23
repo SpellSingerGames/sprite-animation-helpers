@@ -40,6 +40,11 @@ namespace SpellSinger.SpriteAnimationHelpers
         [SerializeField] private SpriteAlignment alignment = SpriteAlignment.Center;
         [SerializeField] private Vector2 pivot = new(0.5f, 0.5f);
 
+        private void OnEnable()
+        {
+            titleContent = new GUIContent("Sprite Animation Importer");
+        }
+
         private void OnGUI()
         {
             useTexture = EditorGUILayout.Toggle("Take Sprites from Texture", useTexture);

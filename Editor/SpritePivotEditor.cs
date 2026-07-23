@@ -11,6 +11,11 @@ namespace SpellSinger.SpriteAnimationHelpers
         [SerializeField] private SpriteAlignment alignment = SpriteAlignment.Custom;
         [SerializeField] private Vector2 pivot = new(0.5f, 0.5f);
 
+        private void OnEnable()
+        {
+            titleContent = new GUIContent("Sprite Pivot Editor");
+        }
+
         private void OnGUI()
         {
             tex = (Texture2D)EditorGUILayout.ObjectField("Texture", tex, typeof(Texture2D), false);

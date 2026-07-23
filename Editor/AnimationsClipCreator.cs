@@ -97,6 +97,7 @@ namespace SpellSinger.SpriteAnimationHelpers
 
         protected void OnEnable()
         {
+            titleContent = new GUIContent("Animation Clips Creator");
             ScriptableObject scriptableObj = this;
             serialObj = new SerializedObject(scriptableObj);
         }

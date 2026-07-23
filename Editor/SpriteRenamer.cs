@@ -7,6 +7,11 @@ namespace SpellSinger.SpriteAnimationHelpers
 {
     public class SpriteRenamer : EditorWindow
     {
+        private void OnEnable()
+        {
+            titleContent = new GUIContent("Sprite Renamer");
+        }
+
         [MenuItem("Assets/Fix Sprites Names", false)]
         private static void Rename(MenuCommand menuCommand)
         {
